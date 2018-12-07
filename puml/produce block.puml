@@ -19,9 +19,6 @@ participant "controller.cpp\n controller" as cc
 participant "controller.cpp\n controller_impl" as cci
 participant fork_db
 participant "controller.cpp\n pending_state" as ps
-participant "signed_transaction.cpp\n signed_transaction" as strx
-participant "block_state.cpp\n block_state" as pbs
-participant "block_header_state.cpp\n block_header_state" as pbhs
 
  [o->pp: startup
 activate pp
@@ -35,22 +32,16 @@ ppi->ppi: start_block
 
     activate cc
     cc ->cci: start_block
+    deactivate cc
         activate cci
-            'create pbs
-            cci->pbs: block_state()
-                activate  pbs
-                'create pbhs
-                pbs->pbhs: generate_next()
-                deactivate pbs
-            cci->pbs: set_confirmed()
-            cci->pbs: maybe_promote_pending
-            cci->pbs: set_new_producers
+            cci->ps: block_state()->generate_next()
+            cci->ps: set_confirmed()
+            cci->ps: maybe_promote_pending
+            cci->ps: set_new_producers
             'create strx
-            cci-->strx: get_on_block_transaction
-            cci->cci:  push_transaction
+            cci->cci:  push_transaction \nonblock
             cci->cci: clear_expired_input_transactions
         deactivate cci
-    deactivate cc
     '-----------------------------------------------------------------
     ppi->cc: push_transaction
     activate cc
